@@ -280,7 +280,9 @@ export function App() {
     try {
       // Create a public client for the selected network
       const client = createPublicClient({
-        transport: http(selectedNetwork.rpcUrl),
+        transport: http(selectedNetwork.rpcUrl, {
+          timeout: 30_000,
+        }),
       })
 
       const contract = getContract({
@@ -294,7 +296,16 @@ export function App() {
 
       setFunctionResults({ ...functionResults, [key]: result?.toString() || 'Success' })
     } catch (e: any) {
-      setFunctionResults({ ...functionResults, [key]: 'Error: ' + e.message })
+      let errorMsg = e.message || 'Unknown error'
+      
+      // Provide more helpful error messages
+      if (errorMsg.includes('Failed to fetch') || errorMsg.includes('fetch')) {
+        errorMsg = `Network error: Cannot reach RPC endpoint "${selectedNetwork.rpcUrl}". Check if the RPC URL is correct and accessible.`
+      } else if (errorMsg.includes('CORS')) {
+        errorMsg = `CORS error: The RPC endpoint "${selectedNetwork.rpcUrl}" doesn't allow browser requests. Try a different RPC provider.`
+      }
+      
+      setFunctionResults({ ...functionResults, [key]: 'Error: ' + errorMsg })
     } finally {
       setLoading({ ...loading, [key]: false })
     }
@@ -332,7 +343,16 @@ export function App() {
         [key]: `Transaction sent: ${hash}`,
       })
     } catch (e: any) {
-      setFunctionResults({ ...functionResults, [key]: 'Error: ' + e.message })
+      let errorMsg = e.message || 'Unknown error'
+      
+      // Provide more helpful error messages
+      if (e.message?.includes('User rejected') || e.message?.includes('User denied')) {
+        errorMsg = 'Transaction rejected by user'
+      } else if (e.message?.includes('insufficient funds')) {
+        errorMsg = 'Insufficient funds for transaction'
+      }
+      
+      setFunctionResults({ ...functionResults, [key]: 'Error: ' + errorMsg })
     } finally {
       setLoading({ ...loading, [key]: false })
     }
