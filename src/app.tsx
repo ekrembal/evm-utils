@@ -206,26 +206,26 @@ export function App() {
     const key = func.name
 
     return (
-      <div key={key} class="border border-gray-300 rounded-lg p-4 mb-4">
-        <div class="flex items-center justify-between mb-2">
-          <h3 class="font-semibold text-lg">{func.name}</h3>
+      <div key={key} class="border border-gray-300 rounded p-2 mb-2">
+        <div class="flex items-center justify-between mb-1">
+          <h3 class="font-semibold text-sm">{func.name}</h3>
           {func.stateMutability === 'payable' && (
-            <span class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded">
+            <span class="text-xs bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded">
               Payable
             </span>
           )}
         </div>
 
         {func.inputs && func.inputs.length > 0 && (
-          <div class="mb-3 space-y-2">
+          <div class="mb-2 space-y-1">
             {func.inputs.map((input: any, idx: number) => (
               <div key={idx}>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="block text-xs font-medium text-gray-700 mb-0.5">
                   {input.name || `param${idx}`} ({input.type})
                 </label>
                 <input
                   type="text"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   placeholder={input.type}
                   value={functionInputs[key]?.[idx] || ''}
                   onInput={(e) =>
@@ -240,14 +240,14 @@ export function App() {
         <button
           onClick={() => (isWrite ? handleWriteFunction(func) : handleReadFunction(func))}
           disabled={loading[key]}
-          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          class="bg-blue-600 text-white px-3 py-1 text-sm rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {loading[key] ? 'Loading...' : isWrite ? 'Write' : 'Query'}
         </button>
 
         {functionResults[key] && (
-          <div class="mt-3 p-3 bg-gray-100 rounded-md">
-            <p class="text-sm font-mono break-all">{functionResults[key]}</p>
+          <div class="mt-2 p-2 bg-gray-100 rounded">
+            <p class="text-xs font-mono break-all">{functionResults[key]}</p>
           </div>
         )}
       </div>
@@ -258,16 +258,16 @@ export function App() {
     <div class="min-h-screen bg-gray-50">
       <div class="w-full px-8 py-8">
         {/* Header */}
-        <div class="flex justify-between items-center mb-8">
-          <h1 class="text-3xl font-bold text-gray-900">EVM Utils</h1>
+        <div class="flex justify-between items-center mb-4">
+          <h1 class="text-2xl font-bold text-gray-900">EVM Utils</h1>
           <ConnectButton />
         </div>
 
         {/* Network Selector */}
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2">Network</label>
+        <div class="bg-white rounded-lg shadow-md p-3 mb-3">
+          <label class="block text-xs font-medium text-gray-700 mb-1">Network</label>
           <select
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
             value={selectedNetwork.id}
             onChange={(e) => {
               const network = networks.find(
@@ -285,13 +285,13 @@ export function App() {
         </div>
 
         {/* Contract Address */}
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+        <div class="bg-white rounded-lg shadow-md p-3 mb-3">
+          <label class="block text-xs font-medium text-gray-700 mb-1">
             Contract Address
           </label>
           <input
             type="text"
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
             placeholder="0x3100000000000000000000000000000000000002"
             value={contractAddress}
             onInput={(e) => setContractAddress((e.target as HTMLInputElement).value)}
@@ -299,37 +299,37 @@ export function App() {
         </div>
 
         {/* Contract ABI */}
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div class="flex justify-between items-center mb-2">
-            <label class="block text-sm font-medium text-gray-700">Contract ABI</label>
+        <div class="bg-white rounded-lg shadow-md p-3 mb-3">
+          <div class="flex justify-between items-center mb-1">
+            <label class="block text-xs font-medium text-gray-700">Contract ABI</label>
             <button
               onClick={handleShare}
-              class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 text-sm"
+              class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
             >
               Share
             </button>
           </div>
           <textarea
-            class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-            rows={10}
+            class="w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono text-xs"
+            rows={8}
             placeholder="Paste contract ABI JSON here..."
             value={contractAbi}
             onInput={(e) => setContractAbi((e.target as HTMLTextAreaElement).value)}
           />
-          {abiError && <p class="text-red-600 text-sm mt-2">{abiError}</p>}
+          {abiError && <p class="text-red-600 text-xs mt-1">{abiError}</p>}
         </div>
 
         {/* Contract Interaction Side by Side */}
         {parsedAbi && !abiError && (
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Read Contract */}
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-xl font-bold mb-4 text-gray-900">
+            <div class="bg-white rounded-lg shadow-md p-3">
+              <h2 class="text-base font-bold mb-2 text-gray-900">
                 Read Contract ({readFunctions.length})
               </h2>
               <div>
                 {readFunctions.length === 0 ? (
-                  <p class="text-gray-500">No read functions found in ABI</p>
+                  <p class="text-gray-500 text-sm">No read functions found in ABI</p>
                 ) : (
                   readFunctions.map((func) => renderFunction(func, false))
                 )}
@@ -337,13 +337,13 @@ export function App() {
             </div>
 
             {/* Write Contract */}
-            <div class="bg-white rounded-lg shadow-md p-6">
-              <h2 class="text-xl font-bold mb-4 text-gray-900">
+            <div class="bg-white rounded-lg shadow-md p-3">
+              <h2 class="text-base font-bold mb-2 text-gray-900">
                 Write Contract ({writeFunctions.length})
               </h2>
               <div>
                 {writeFunctions.length === 0 ? (
-                  <p class="text-gray-500">No write functions found in ABI</p>
+                  <p class="text-gray-500 text-sm">No write functions found in ABI</p>
                 ) : (
                   writeFunctions.map((func) => renderFunction(func, true))
                 )}
