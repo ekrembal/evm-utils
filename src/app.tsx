@@ -2,7 +2,7 @@ import { useState, useEffect } from 'preact/hooks'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi'
 import { getContract, type Abi, type Address, createPublicClient, http } from 'viem'
-import { citreaTestnet } from './wagmi.config'
+import { citreaTestnet, citreaDevnet } from './wagmi.config'
 
 type Network = {
   id: number
@@ -17,6 +17,12 @@ const defaultNetworks: Network[] = [
     name: citreaTestnet.name,
     rpcUrl: citreaTestnet.rpcUrls.default.http[0],
     explorerUrl: citreaTestnet.blockExplorers!.default.url,
+  },
+  {
+    id: citreaDevnet.id,
+    name: citreaDevnet.name,
+    rpcUrl: citreaDevnet.rpcUrls.default.http[0],
+    explorerUrl: citreaDevnet.blockExplorers!.default.url,
   },
 ]
 
@@ -188,52 +194,6 @@ export function App() {
     setSelectedNetwork(newNetwork)
     setShowAddNetworkModal(false)
     setNewNetwork({ id: 0, name: '', rpcUrl: '', explorerUrl: '' })
-  }
-
-  const handleSwitchNetwork = async () => {
-    if (!walletClient) {
-      alert('Please connect your wallet first')
-      return
-    }
-
-    try {
-      const chainIdHex = `0x${selectedNetwork.id.toString(16)}`
-      
-      // First, try to switch to the network
-      try {
-        await walletClient.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainIdHex }],
-        } as any)
-      } catch (switchError: any) {
-        // If the network doesn't exist (error 4902), add it
-        if (switchError.code === 4902) {
-          await walletClient.request({
-            method: 'wallet_addEthereumChain',
-            params: [
-              {
-                chainId: chainIdHex,
-                chainName: selectedNetwork.name,
-                rpcUrls: [selectedNetwork.rpcUrl],
-                blockExplorerUrls: selectedNetwork.explorerUrl
-                  ? [selectedNetwork.explorerUrl]
-                  : undefined,
-                nativeCurrency: {
-                  name: 'ETH',
-                  symbol: 'ETH',
-                  decimals: 18,
-                },
-              },
-            ],
-          } as any)
-        } else {
-          throw switchError
-        }
-      }
-    } catch (error: any) {
-      console.error('Failed to switch network:', error)
-      alert(`Failed to switch network: ${error.message || 'Unknown error'}`)
-    }
   }
 
   const toggleFunction = (funcName: string) => {
@@ -428,17 +388,9 @@ export function App() {
 
         {/* Wrong Network Warning */}
         {address && connectedChainId !== selectedNetwork.id && (
-          <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded-lg mb-3 text-sm flex items-center justify-between">
-            <span>
-              <strong>⚠️ Wrong Network:</strong> Please switch to{' '}
-              <strong>{selectedNetwork.name}</strong> (Chain ID: {selectedNetwork.id})
-            </span>
-            <button
-              onClick={handleSwitchNetwork}
-              class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm ml-3 whitespace-nowrap"
-            >
-              Switch Network
-            </button>
+          <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded-lg mb-3 text-sm">
+            <strong>⚠️ Wrong Network:</strong> Please switch to{' '}
+            <strong>{selectedNetwork.name}</strong> (Chain ID: {selectedNetwork.id}) in your wallet
           </div>
         )}
 
