@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi'
+import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from 'wagmi'
 import { getContract, type Abi, type Address } from 'viem'
 import { citreaTestnet } from './wagmi.config'
 
@@ -47,6 +47,7 @@ export function App() {
   const publicClient = usePublicClient()
   const { data: walletClient } = useWalletClient()
   const connectedChainId = useChainId()
+  const { switchChain } = useSwitchChain()
 
   // Load from URL params on mount
   useEffect(() => {
@@ -188,6 +189,46 @@ export function App() {
     setSelectedNetwork(newNetwork)
     setShowAddNetworkModal(false)
     setNewNetwork({ id: 0, name: '', rpcUrl: '', explorerUrl: '' })
+  }
+
+  const handleSwitchNetwork = async () => {
+    if (!walletClient) return
+
+    try {
+      // Try to switch to the network first
+      if (switchChain) {
+        switchChain({ chainId: selectedNetwork.id })
+      }
+    } catch (error: any) {
+      // If switching fails (network not added), add it to the wallet
+      if (error.code === 4902 || error.code === -32603) {
+        try {
+          await walletClient.request({
+            method: 'wallet_addEthereumChain',
+            params: [
+              {
+                chainId: `0x${selectedNetwork.id.toString(16)}`,
+                chainName: selectedNetwork.name,
+                rpcUrls: [selectedNetwork.rpcUrl],
+                blockExplorerUrls: selectedNetwork.explorerUrl
+                  ? [selectedNetwork.explorerUrl]
+                  : undefined,
+                nativeCurrency: {
+                  name: 'ETH',
+                  symbol: 'ETH',
+                  decimals: 18,
+                },
+              },
+            ],
+          } as any)
+        } catch (addError) {
+          console.error('Failed to add network:', addError)
+          alert('Failed to add network to wallet')
+        }
+      } else {
+        console.error('Failed to switch network:', error)
+      }
+    }
   }
 
   const toggleFunction = (funcName: string) => {
@@ -349,9 +390,17 @@ export function App() {
 
         {/* Wrong Network Warning */}
         {address && connectedChainId !== selectedNetwork.id && (
-          <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded-lg mb-3 text-sm">
-            <strong>⚠️ Wrong Network:</strong> Please switch to{' '}
-            <strong>{selectedNetwork.name}</strong> (Chain ID: {selectedNetwork.id}) in your wallet
+          <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded-lg mb-3 text-sm flex items-center justify-between">
+            <span>
+              <strong>⚠️ Wrong Network:</strong> Please switch to{' '}
+              <strong>{selectedNetwork.name}</strong> (Chain ID: {selectedNetwork.id})
+            </span>
+            <button
+              onClick={handleSwitchNetwork}
+              class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm ml-3 whitespace-nowrap"
+            >
+              Switch Network
+            </button>
           </div>
         )}
 
