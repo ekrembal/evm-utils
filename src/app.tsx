@@ -30,7 +30,6 @@ export function App() {
   const [selectedNetwork, setSelectedNetwork] = useState<Network>(networks[0])
   const [contractAddress, setContractAddress] = useState('')
   const [contractAbi, setContractAbi] = useState('')
-  const [activeTab, setActiveTab] = useState<'read' | 'write'>('read')
   const [parsedAbi, setParsedAbi] = useState<Abi | null>(null)
   const [abiError, setAbiError] = useState('')
   const [readFunctions, setReadFunctions] = useState<any[]>([])
@@ -320,52 +319,35 @@ export function App() {
           {abiError && <p class="text-red-600 text-sm mt-2">{abiError}</p>}
         </div>
 
-        {/* Contract Interaction Tabs */}
+        {/* Contract Interaction Side by Side */}
         {parsedAbi && !abiError && (
-          <div class="bg-white rounded-lg shadow-md p-6">
-            {/* Tabs */}
-            <div class="flex border-b border-gray-200 mb-6">
-              <button
-                onClick={() => setActiveTab('read')}
-                class={`px-6 py-3 font-medium ${
-                  activeTab === 'read'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Read Contract */}
+            <div class="bg-white rounded-lg shadow-md p-6">
+              <h2 class="text-xl font-bold mb-4 text-gray-900">
                 Read Contract ({readFunctions.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('write')}
-                class={`px-6 py-3 font-medium ${
-                  activeTab === 'write'
-                    ? 'border-b-2 border-blue-600 text-blue-600'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Write Contract ({writeFunctions.length})
-              </button>
+              </h2>
+              <div>
+                {readFunctions.length === 0 ? (
+                  <p class="text-gray-500">No read functions found in ABI</p>
+                ) : (
+                  readFunctions.map((func) => renderFunction(func, false))
+                )}
+              </div>
             </div>
 
-            {/* Tab Content */}
-            <div>
-              {activeTab === 'read' ? (
-                <div>
-                  {readFunctions.length === 0 ? (
-                    <p class="text-gray-500">No read functions found in ABI</p>
-                  ) : (
-                    readFunctions.map((func) => renderFunction(func, false))
-                  )}
-                </div>
-              ) : (
-                <div>
-                  {writeFunctions.length === 0 ? (
-                    <p class="text-gray-500">No write functions found in ABI</p>
-                  ) : (
-                    writeFunctions.map((func) => renderFunction(func, true))
-                  )}
-                </div>
-              )}
+            {/* Write Contract */}
+            <div class="bg-white rounded-lg shadow-md p-6">
+              <h2 class="text-xl font-bold mb-4 text-gray-900">
+                Write Contract ({writeFunctions.length})
+              </h2>
+              <div>
+                {writeFunctions.length === 0 ? (
+                  <p class="text-gray-500">No write functions found in ABI</p>
+                ) : (
+                  writeFunctions.map((func) => renderFunction(func, true))
+                )}
+              </div>
             </div>
           </div>
         )}
