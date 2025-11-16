@@ -256,7 +256,7 @@ export function App() {
 
   return (
     <div class="min-h-screen bg-gray-50">
-      <div class="container mx-auto px-4 py-8 max-w-4xl">
+      <div class="w-full px-8 py-8">
         {/* Header */}
         <div class="flex justify-between items-center mb-8">
           <h1 class="text-3xl font-bold text-gray-900">EVM Utils</h1>
