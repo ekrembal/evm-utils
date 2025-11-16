@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
+import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi'
 import { getContract, type Abi, type Address } from 'viem'
 import { citreaTestnet } from './wagmi.config'
 
@@ -11,7 +11,7 @@ type Network = {
   explorerUrl: string
 }
 
-const networks: Network[] = [
+const defaultNetworks: Network[] = [
   {
     id: citreaTestnet.id,
     name: citreaTestnet.name,
@@ -21,6 +21,7 @@ const networks: Network[] = [
 ]
 
 export function App() {
+  const [networks, setNetworks] = useState<Network[]>(defaultNetworks)
   const [selectedNetwork, setSelectedNetwork] = useState<Network>(networks[0])
   const [contractAddress, setContractAddress] = useState('')
   const [contractAbi, setContractAbi] = useState('')
@@ -34,10 +35,18 @@ export function App() {
   const [showShareModal, setShowShareModal] = useState(false)
   const [selectedFunctions, setSelectedFunctions] = useState<Set<string>>(new Set())
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(false)
+  const [showAddNetworkModal, setShowAddNetworkModal] = useState(false)
+  const [newNetwork, setNewNetwork] = useState<Network>({
+    id: 0,
+    name: '',
+    rpcUrl: '',
+    explorerUrl: '',
+  })
 
   const { address } = useAccount()
   const publicClient = usePublicClient()
   const { data: walletClient } = useWalletClient()
+  const connectedChainId = useChainId()
 
   // Load from URL params on mount
   useEffect(() => {
@@ -45,8 +54,21 @@ export function App() {
     const networkParam = params.get('network')
     const addressParam = params.get('address')
     const abiParam = params.get('abi')
+    const networkDataParam = params.get('networkData')
 
-    if (networkParam) {
+    // Load custom network if provided
+    if (networkDataParam) {
+      try {
+        const networkData = JSON.parse(atob(networkDataParam))
+        const existingNetwork = networks.find(n => n.id === networkData.id)
+        if (!existingNetwork) {
+          setNetworks([...networks, networkData])
+          setSelectedNetwork(networkData)
+        }
+      } catch (e) {
+        console.error('Failed to parse network data from URL', e)
+      }
+    } else if (networkParam) {
       const network = networks.find(n => n.id === parseInt(networkParam))
       if (network) setSelectedNetwork(network)
     }
@@ -138,10 +160,34 @@ export function App() {
       abi: compressed,
     })
 
+    // Check if it's a custom network (not in default networks)
+    const isCustomNetwork = !defaultNetworks.find(n => n.id === selectedNetwork.id)
+    if (isCustomNetwork) {
+      params.set('networkData', btoa(JSON.stringify(selectedNetwork)))
+    }
+
     const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`
     navigator.clipboard.writeText(url)
     alert('Share URL copied to clipboard!')
     setShowShareModal(false)
+  }
+
+  const handleAddNetwork = () => {
+    if (!newNetwork.name || !newNetwork.id || !newNetwork.rpcUrl) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    const existingNetwork = networks.find(n => n.id === newNetwork.id)
+    if (existingNetwork) {
+      alert('A network with this Chain ID already exists')
+      return
+    }
+
+    setNetworks([...networks, newNetwork])
+    setSelectedNetwork(newNetwork)
+    setShowAddNetworkModal(false)
+    setNewNetwork({ id: 0, name: '', rpcUrl: '', explorerUrl: '' })
   }
 
   const toggleFunction = (funcName: string) => {
@@ -301,6 +347,14 @@ export function App() {
           <ConnectButton />
         </div>
 
+        {/* Wrong Network Warning */}
+        {address && connectedChainId !== selectedNetwork.id && (
+          <div class="bg-yellow-100 border border-yellow-400 text-yellow-800 px-3 py-2 rounded-lg mb-3 text-sm">
+            <strong>⚠️ Wrong Network:</strong> Please switch to{' '}
+            <strong>{selectedNetwork.name}</strong> (Chain ID: {selectedNetwork.id}) in your wallet
+          </div>
+        )}
+
         {/* Configuration Section - Collapsible */}
         <div class="bg-white rounded-lg shadow-md mb-3">
           {isConfigCollapsed ? (
@@ -315,6 +369,9 @@ export function App() {
                     <span class="font-medium">{selectedNetwork.name}</span>
                     {' • '}
                     <span class="font-mono">{contractAddress}</span>
+                  </p>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    RPC: {selectedNetwork.rpcUrl}
                   </p>
                 </div>
                 <button class="text-gray-500 hover:text-gray-700 text-sm ml-2">
@@ -337,7 +394,15 @@ export function App() {
 
               {/* Network Selector */}
               <div class="mb-3">
-                <label class="block text-xs font-medium text-gray-700 mb-1">Network</label>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="block text-xs font-medium text-gray-700">Network</label>
+                  <button
+                    onClick={() => setShowAddNetworkModal(true)}
+                    class="text-xs text-blue-600 hover:text-blue-700"
+                  >
+                    + Add Network
+                  </button>
+                </div>
                 <select
                   class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   value={selectedNetwork.id}
@@ -525,6 +590,111 @@ export function App() {
                   class="bg-green-600 text-white px-4 py-2 text-sm rounded hover:bg-green-700"
                 >
                   Share Selected
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add Network Modal */}
+        {showAddNetworkModal && (
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+              <div class="p-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                  <h2 class="text-lg font-bold text-gray-900">Add Custom Network</h2>
+                  <button
+                    onClick={() => setShowAddNetworkModal(false)}
+                    class="text-gray-500 hover:text-gray-700 text-xl"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+
+              <div class="p-4 space-y-3">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Network Name *
+                  </label>
+                  <input
+                    type="text"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="e.g., Ethereum Mainnet"
+                    value={newNetwork.name}
+                    onInput={(e) =>
+                      setNewNetwork({ ...newNetwork, name: (e.target as HTMLInputElement).value })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Chain ID *
+                  </label>
+                  <input
+                    type="number"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="e.g., 1"
+                    value={newNetwork.id || ''}
+                    onInput={(e) =>
+                      setNewNetwork({
+                        ...newNetwork,
+                        id: parseInt((e.target as HTMLInputElement).value) || 0,
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    RPC URL *
+                  </label>
+                  <input
+                    type="text"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="https://..."
+                    value={newNetwork.rpcUrl}
+                    onInput={(e) =>
+                      setNewNetwork({ ...newNetwork, rpcUrl: (e.target as HTMLInputElement).value })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Explorer URL (optional)
+                  </label>
+                  <input
+                    type="text"
+                    class="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="https://..."
+                    value={newNetwork.explorerUrl}
+                    onInput={(e) =>
+                      setNewNetwork({
+                        ...newNetwork,
+                        explorerUrl: (e.target as HTMLInputElement).value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div class="p-4 border-t border-gray-200 flex justify-end gap-2">
+                <button
+                  onClick={() => {
+                    setShowAddNetworkModal(false)
+                    setNewNetwork({ id: 0, name: '', rpcUrl: '', explorerUrl: '' })
+                  }}
+                  class="bg-gray-200 text-gray-800 px-4 py-2 text-sm rounded hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddNetwork}
+                  class="bg-blue-600 text-white px-4 py-2 text-sm rounded hover:bg-blue-700"
+                >
+                  Add Network
                 </button>
               </div>
             </div>
