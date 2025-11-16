@@ -39,6 +39,7 @@ export function App() {
   const [loading, setLoading] = useState<Record<string, boolean>>({})
   const [showShareModal, setShowShareModal] = useState(false)
   const [selectedFunctions, setSelectedFunctions] = useState<Set<string>>(new Set())
+  const [isConfigCollapsed, setIsConfigCollapsed] = useState(false)
 
   const { address } = useAccount()
   const publicClient = usePublicClient()
@@ -106,6 +107,13 @@ export function App() {
       setWriteFunctions([])
     }
   }, [contractAbi])
+
+  // Auto-collapse when all configuration is complete
+  useEffect(() => {
+    if (contractAddress && parsedAbi && !abiError) {
+      setIsConfigCollapsed(true)
+    }
+  }, [contractAddress, parsedAbi, abiError])
 
   const handleShare = () => {
     if (!parsedAbi) {
@@ -299,60 +307,97 @@ export function App() {
           <ConnectButton />
         </div>
 
-        {/* Network Selector */}
-        <div class="bg-white rounded-lg shadow-md p-3 mb-3">
-          <label class="block text-xs font-medium text-gray-700 mb-1">Network</label>
-          <select
-            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-            value={selectedNetwork.id}
-            onChange={(e) => {
-              const network = networks.find(
-                (n) => n.id === parseInt((e.target as HTMLSelectElement).value)
-              )
-              if (network) setSelectedNetwork(network)
-            }}
-          >
-            {networks.map((network) => (
-              <option key={network.id} value={network.id}>
-                {network.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Contract Address */}
-        <div class="bg-white rounded-lg shadow-md p-3 mb-3">
-          <label class="block text-xs font-medium text-gray-700 mb-1">
-            Contract Address
-          </label>
-          <input
-            type="text"
-            class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-            placeholder="0x3100000000000000000000000000000000000002"
-            value={contractAddress}
-            onInput={(e) => setContractAddress((e.target as HTMLInputElement).value)}
-          />
-        </div>
-
-        {/* Contract ABI */}
-        <div class="bg-white rounded-lg shadow-md p-3 mb-3">
-          <div class="flex justify-between items-center mb-1">
-            <label class="block text-xs font-medium text-gray-700">Contract ABI</label>
-            <button
-              onClick={handleShare}
-              class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+        {/* Configuration Section - Collapsible */}
+        <div class="bg-white rounded-lg shadow-md mb-3">
+          {isConfigCollapsed ? (
+            // Collapsed View
+            <div
+              class="p-3 cursor-pointer hover:bg-gray-50"
+              onClick={() => setIsConfigCollapsed(false)}
             >
-              Share
-            </button>
-          </div>
-          <textarea
-            class="w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono text-xs"
-            rows={8}
-            placeholder="Paste contract ABI JSON here..."
-            value={contractAbi}
-            onInput={(e) => setContractAbi((e.target as HTMLTextAreaElement).value)}
-          />
-          {abiError && <p class="text-red-600 text-xs mt-1">{abiError}</p>}
+              <div class="flex justify-between items-center">
+                <div class="flex-1">
+                  <p class="text-xs text-gray-600">
+                    <span class="font-medium">{selectedNetwork.name}</span>
+                    {' • '}
+                    <span class="font-mono">{contractAddress}</span>
+                  </p>
+                </div>
+                <button class="text-gray-500 hover:text-gray-700 text-sm ml-2">
+                  ▼ Expand
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Expanded View
+            <div class="p-3">
+              <div class="flex justify-between items-center mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">Configuration</h3>
+                <button
+                  onClick={() => setIsConfigCollapsed(true)}
+                  class="text-gray-500 hover:text-gray-700 text-sm"
+                >
+                  ▲ Collapse
+                </button>
+              </div>
+
+              {/* Network Selector */}
+              <div class="mb-3">
+                <label class="block text-xs font-medium text-gray-700 mb-1">Network</label>
+                <select
+                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  value={selectedNetwork.id}
+                  onChange={(e) => {
+                    const network = networks.find(
+                      (n) => n.id === parseInt((e.target as HTMLSelectElement).value)
+                    )
+                    if (network) setSelectedNetwork(network)
+                  }}
+                >
+                  {networks.map((network) => (
+                    <option key={network.id} value={network.id}>
+                      {network.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Contract Address */}
+              <div class="mb-3">
+                <label class="block text-xs font-medium text-gray-700 mb-1">
+                  Contract Address
+                </label>
+                <input
+                  type="text"
+                  class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                  placeholder="0x3100000000000000000000000000000000000002"
+                  value={contractAddress}
+                  onInput={(e) => setContractAddress((e.target as HTMLInputElement).value)}
+                />
+              </div>
+
+              {/* Contract ABI */}
+              <div>
+                <div class="flex justify-between items-center mb-1">
+                  <label class="block text-xs font-medium text-gray-700">Contract ABI</label>
+                  <button
+                    onClick={handleShare}
+                    class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                  >
+                    Share
+                  </button>
+                </div>
+                <textarea
+                  class="w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono text-xs"
+                  rows={8}
+                  placeholder="Paste contract ABI JSON here..."
+                  value={contractAbi}
+                  onInput={(e) => setContractAbi((e.target as HTMLTextAreaElement).value)}
+                />
+                {abiError && <p class="text-red-600 text-xs mt-1">{abiError}</p>}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Contract Interaction Side by Side */}
