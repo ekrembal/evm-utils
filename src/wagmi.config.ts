@@ -47,7 +47,7 @@ export const citreaDevnet = defineChain({
 
 export const config = getDefaultConfig({
   appName: 'EVM Utils',
-  projectId: 'YOUR_PROJECT_ID', // User will need to replace this with their WalletConnect project ID
+  projectId: '55f79c214b1607c2e03109b9f37e7964',
   chains: [citreaTestnet, citreaDevnet],
   transports: {
     [citreaTestnet.id]: http('https://rpc.testnet.citrea.xyz'),
