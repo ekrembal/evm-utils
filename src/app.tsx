@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi'
-import { getContract, type Abi, type Address, createPublicClient, http } from 'viem'
+import { getContract, type Abi, type Address, createPublicClient, http, toFunctionSelector } from 'viem'
 import { citreaTestnet, citreaDevnet } from './wagmi.config'
 import LZString from 'lz-string'
 
@@ -337,13 +337,39 @@ export function App() {
     setFunctionInputs({ ...functionInputs, [funcName]: updated })
   }
 
+  const copyToClipboard = (text: string, label: string = 'Text') => {
+    navigator.clipboard.writeText(text)
+    alert(`${label} copied to clipboard!`)
+  }
+
+  const getFunctionSelector = (func: any): string => {
+    try {
+      return toFunctionSelector(func)
+    } catch (e) {
+      return 'N/A'
+    }
+  }
+
   const renderFunction = (func: any, isWrite: boolean) => {
     const key = func.name
+    const selector = getFunctionSelector(func)
 
   return (
       <div key={key} class="border border-gray-300 rounded p-2 mb-2">
         <div class="flex items-center justify-between mb-1">
-          <h3 class="font-semibold text-sm">{func.name}</h3>
+          <div class="flex-1">
+            <h3 class="font-semibold text-sm">{func.name}</h3>
+            <div class="flex items-center gap-1 mt-0.5">
+              <span class="text-xs text-gray-500 font-mono">{selector}</span>
+              <button
+                onClick={() => copyToClipboard(selector, 'Function selector')}
+                class="text-xs text-blue-600 hover:text-blue-700 px-1"
+                title="Copy selector"
+              >
+                📋
+              </button>
+            </div>
+          </div>
           {func.stateMutability === 'payable' && (
             <span class="text-xs bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded">
               Payable
@@ -382,7 +408,16 @@ export function App() {
 
         {functionResults[key] && (
           <div class="mt-2 p-2 bg-gray-100 rounded">
-            <p class="text-xs font-mono break-all">{functionResults[key]}</p>
+            <div class="flex items-start justify-between gap-2">
+              <p class="text-xs font-mono break-all flex-1">{functionResults[key]}</p>
+              <button
+                onClick={() => copyToClipboard(functionResults[key], 'Result')}
+                class="text-xs text-blue-600 hover:text-blue-700 px-1 flex-shrink-0"
+                title="Copy result"
+              >
+                📋
+              </button>
+            </div>
           </div>
         )}
       </div>
