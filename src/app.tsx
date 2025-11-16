@@ -43,6 +43,7 @@ export function App() {
   const [selectedFunctions, setSelectedFunctions] = useState<Set<string>>(new Set())
   const [isConfigCollapsed, setIsConfigCollapsed] = useState(false)
   const [showAddNetworkModal, setShowAddNetworkModal] = useState(false)
+  const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set())
   const [newNetwork, setNewNetwork] = useState<Network>({
     id: 0,
     name: '',
@@ -181,7 +182,6 @@ export function App() {
 
     const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`
     navigator.clipboard.writeText(url)
-    alert('Share URL copied to clipboard!')
     setShowShareModal(false)
   }
 
@@ -337,9 +337,18 @@ export function App() {
     setFunctionInputs({ ...functionInputs, [funcName]: updated })
   }
 
-  const copyToClipboard = (text: string, label: string = 'Text') => {
+  const copyToClipboard = (text: string, itemId: string) => {
     navigator.clipboard.writeText(text)
-    alert(`${label} copied to clipboard!`)
+    setCopiedItems(new Set(copiedItems).add(itemId))
+    
+    // Remove the checkmark after 2 seconds
+    setTimeout(() => {
+      setCopiedItems((prev) => {
+        const next = new Set(prev)
+        next.delete(itemId)
+        return next
+      })
+    }, 2000)
   }
 
   const getFunctionSelector = (func: any): string => {
@@ -353,6 +362,8 @@ export function App() {
   const renderFunction = (func: any, isWrite: boolean) => {
     const key = func.name
     const selector = getFunctionSelector(func)
+    const selectorCopyId = `selector-${key}`
+    const resultCopyId = `result-${key}`
 
   return (
       <div key={key} class="border border-gray-300 rounded p-2 mb-2">
@@ -362,11 +373,15 @@ export function App() {
             <div class="flex items-center gap-1 mt-0.5">
               <span class="text-xs text-gray-500 font-mono">{selector}</span>
               <button
-                onClick={() => copyToClipboard(selector, 'Function selector')}
-                class="text-xs text-blue-600 hover:text-blue-700 px-1"
+                onClick={() => copyToClipboard(selector, selectorCopyId)}
+                class={`text-xs px-1 ${
+                  copiedItems.has(selectorCopyId)
+                    ? 'text-green-600'
+                    : 'text-blue-600 hover:text-blue-700'
+                }`}
                 title="Copy selector"
               >
-                📋
+                {copiedItems.has(selectorCopyId) ? '✓' : '📋'}
               </button>
             </div>
           </div>
@@ -411,11 +426,15 @@ export function App() {
             <div class="flex items-start justify-between gap-2">
               <p class="text-xs font-mono break-all flex-1">{functionResults[key]}</p>
               <button
-                onClick={() => copyToClipboard(functionResults[key], 'Result')}
-                class="text-xs text-blue-600 hover:text-blue-700 px-1 flex-shrink-0"
+                onClick={() => copyToClipboard(functionResults[key], resultCopyId)}
+                class={`text-xs px-1 flex-shrink-0 ${
+                  copiedItems.has(resultCopyId)
+                    ? 'text-green-600'
+                    : 'text-blue-600 hover:text-blue-700'
+                }`}
                 title="Copy result"
               >
-                📋
+                {copiedItems.has(resultCopyId) ? '✓' : '📋'}
               </button>
             </div>
           </div>
