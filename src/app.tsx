@@ -2,7 +2,7 @@ import { useState, useEffect } from 'preact/hooks'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, usePublicClient, useWalletClient } from 'wagmi'
 import { getContract, type Abi, type Address } from 'viem'
-import { citreaTestnet, citreaMainnet } from './wagmi.config'
+import { citreaTestnet } from './wagmi.config'
 
 type Network = {
   id: number
@@ -17,12 +17,6 @@ const networks: Network[] = [
     name: citreaTestnet.name,
     rpcUrl: citreaTestnet.rpcUrls.default.http[0],
     explorerUrl: citreaTestnet.blockExplorers!.default.url,
-  },
-  {
-    id: citreaMainnet.id,
-    name: citreaMainnet.name,
-    rpcUrl: citreaMainnet.rpcUrls.default.http[0],
-    explorerUrl: citreaMainnet.blockExplorers!.default.url,
   },
 ]
 

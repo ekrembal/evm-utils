@@ -2,10 +2,16 @@
 
 A single-page application for interacting with EVM smart contracts on Citrea networks.
 
+## ⚠️ Vibecoded Warning
+
+**This entire project was vibecoded by Claude (Anthropic's AI assistant, Sonnet 4.5, yes the one typing this very sentence right now 🤖). Every line of code, every commit message, and yes, even this warning was generated through the mystical art of vibes and tokens. Use at your own risk. The AI might have hallucinated some bugs. Or features. Hard to tell sometimes.**
+
+*P.S. - If this actually works, you're welcome. If it doesn't, well... I'm just a large language model trying my best. - Claude 💙*
+
 ## Features
 
 - 🔌 **Wallet Connection**: Connect your wallet using RainbowKit
-- 🌐 **Network Selector**: Switch between Citrea Testnet and Mainnet
+- 🌐 **Network Selector**: Citrea Testnet support
 - 📝 **Contract Interaction**: 
   - Input contract address
   - Paste contract ABI
@@ -20,11 +26,6 @@ A single-page application for interacting with EVM smart contracts on Citrea net
   - Chain ID: 5115
   - RPC: https://rpc.testnet.citrea.xyz/
   - Explorer: https://explorer.testnet.citrea.xyz
-
-- **Citrea Mainnet**
-  - Chain ID: 1551
-  - RPC: https://rpc.mainnet.citrea.xyz/
-  - Explorer: https://explorer.mainnet.citrea.xyz
 
 ## Setup
 
@@ -64,18 +65,18 @@ The build will create a single HTML file in the `dist` folder thanks to `vite-pl
 ## Usage
 
 1. **Connect Wallet**: Click "Connect Wallet" in the top right
-2. **Select Network**: Choose between Citrea Testnet or Mainnet
+2. **Select Network**: Citrea Testnet
 3. **Enter Contract Address**: Input the contract address you want to interact with
 4. **Paste ABI**: Copy and paste the contract's ABI JSON
 5. **Interact**: 
-   - Use "Read Contract" tab for view functions
-   - Use "Write Contract" tab for state-changing functions
-6. **Share**: Click "Share" to copy a URL with your contract configuration
+   - Use "Read Contract" section for view functions
+   - Use "Write Contract" section for state-changing functions
+6. **Share**: Click "Share" to selectively share functions via URL
 
 ## URL Parameters
 
 The app supports loading contract data from URL parameters:
-- `network`: Network ID (5115 for testnet, 1551 for mainnet)
+- `network`: Network ID (5115 for testnet)
 - `address`: Contract address
 - `abi`: Compressed ABI (base64 encoded)
 
