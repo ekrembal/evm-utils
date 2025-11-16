@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'preact/hooks'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
-import { useAccount, usePublicClient, useWalletClient, useChainId, useSwitchChain } from 'wagmi'
+import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi'
 import { getContract, type Abi, type Address } from 'viem'
 import { citreaTestnet } from './wagmi.config'
 
@@ -47,7 +47,6 @@ export function App() {
   const publicClient = usePublicClient()
   const { data: walletClient } = useWalletClient()
   const connectedChainId = useChainId()
-  const { switchChain } = useSwitchChain()
 
   // Load from URL params on mount
   useEffect(() => {
@@ -192,22 +191,28 @@ export function App() {
   }
 
   const handleSwitchNetwork = async () => {
-    if (!walletClient) return
+    if (!walletClient) {
+      alert('Please connect your wallet first')
+      return
+    }
 
     try {
-      // Try to switch to the network first
-      if (switchChain) {
-        switchChain({ chainId: selectedNetwork.id })
-      }
-    } catch (error: any) {
-      // If switching fails (network not added), add it to the wallet
-      if (error.code === 4902 || error.code === -32603) {
-        try {
+      const chainIdHex = `0x${selectedNetwork.id.toString(16)}`
+      
+      // First, try to switch to the network
+      try {
+        await walletClient.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainIdHex }],
+        } as any)
+      } catch (switchError: any) {
+        // If the network doesn't exist (error 4902), add it
+        if (switchError.code === 4902) {
           await walletClient.request({
             method: 'wallet_addEthereumChain',
             params: [
               {
-                chainId: `0x${selectedNetwork.id.toString(16)}`,
+                chainId: chainIdHex,
                 chainName: selectedNetwork.name,
                 rpcUrls: [selectedNetwork.rpcUrl],
                 blockExplorerUrls: selectedNetwork.explorerUrl
@@ -221,13 +226,13 @@ export function App() {
               },
             ],
           } as any)
-        } catch (addError) {
-          console.error('Failed to add network:', addError)
-          alert('Failed to add network to wallet')
+        } else {
+          throw switchError
         }
-      } else {
-        console.error('Failed to switch network:', error)
       }
+    } catch (error: any) {
+      console.error('Failed to switch network:', error)
+      alert(`Failed to switch network: ${error.message || 'Unknown error'}`)
     }
   }
 
