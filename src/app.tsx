@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'preact/hooks'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi'
-import { getContract, type Abi, type Address } from 'viem'
+import { getContract, type Abi, type Address, createPublicClient, http } from 'viem'
 import { citreaTestnet } from './wagmi.config'
 
 type Network = {
@@ -272,16 +272,21 @@ export function App() {
   }
 
   const handleReadFunction = async (func: any) => {
-    if (!publicClient || !contractAddress) return
+    if (!contractAddress) return
 
     const key = func.name
     setLoading({ ...loading, [key]: true })
 
     try {
+      // Create a public client for the selected network
+      const client = createPublicClient({
+        transport: http(selectedNetwork.rpcUrl),
+      })
+
       const contract = getContract({
         address: contractAddress as Address,
         abi: parsedAbi!,
-        client: publicClient,
+        client,
       })
 
       const inputs = functionInputs[key] || []
@@ -298,6 +303,14 @@ export function App() {
   const handleWriteFunction = async (func: any) => {
     if (!walletClient || !contractAddress || !address) {
       alert('Please connect your wallet')
+      return
+    }
+
+    // Check if wallet is on the correct network
+    if (connectedChainId !== selectedNetwork.id) {
+      alert(
+        `Wrong network! Please switch to ${selectedNetwork.name} (Chain ID: ${selectedNetwork.id}) before writing to the contract.`
+      )
       return
     }
 
