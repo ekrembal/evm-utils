@@ -3,6 +3,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { useAccount, usePublicClient, useWalletClient, useChainId } from 'wagmi'
 import { getContract, type Abi, type Address, createPublicClient, http } from 'viem'
 import { citreaTestnet, citreaDevnet } from './wagmi.config'
+import LZString from 'lz-string'
 
 type Network = {
   id: number
@@ -65,11 +66,14 @@ export function App() {
     // Load custom network if provided
     if (networkDataParam) {
       try {
-        const networkData = JSON.parse(atob(networkDataParam))
-        const existingNetwork = networks.find(n => n.id === networkData.id)
-        if (!existingNetwork) {
-          setNetworks([...networks, networkData])
-          setSelectedNetwork(networkData)
+        const decompressed = LZString.decompressFromEncodedURIComponent(networkDataParam)
+        if (decompressed) {
+          const networkData = JSON.parse(decompressed)
+          const existingNetwork = networks.find(n => n.id === networkData.id)
+          if (!existingNetwork) {
+            setNetworks([...networks, networkData])
+            setSelectedNetwork(networkData)
+          }
         }
       } catch (e) {
         console.error('Failed to parse network data from URL', e)
@@ -169,7 +173,10 @@ export function App() {
     // Check if it's a custom network (not in default networks)
     const isCustomNetwork = !defaultNetworks.find(n => n.id === selectedNetwork.id)
     if (isCustomNetwork) {
-      params.set('networkData', btoa(JSON.stringify(selectedNetwork)))
+      const compressedNetwork = LZString.compressToEncodedURIComponent(
+        JSON.stringify(selectedNetwork)
+      )
+      params.set('networkData', compressedNetwork)
     }
 
     const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`
@@ -224,11 +231,16 @@ export function App() {
       outputs: item.outputs,
       stateMutability: item.stateMutability,
     }))
-    return btoa(JSON.stringify(compressed))
+    // Use LZ-string for better compression
+    return LZString.compressToEncodedURIComponent(JSON.stringify(compressed))
   }
 
   const decompressAbi = (compressed: string): Abi => {
-    return JSON.parse(atob(compressed))
+    const decompressed = LZString.decompressFromEncodedURIComponent(compressed)
+    if (!decompressed) {
+      throw new Error('Failed to decompress ABI')
+    }
+    return JSON.parse(decompressed)
   }
 
   const handleReadFunction = async (func: any) => {
